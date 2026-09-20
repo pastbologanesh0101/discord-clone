@@ -72,12 +72,14 @@ pip install -r requirements.txt
 python -m unittest discover -s tests -p "test_*.py" -v
 ```
 
-14 unit tests cover the core module directly (no Flask app, no websocket):
+17 unit tests cover the core module directly (no Flask app, no websocket):
 server creation/ownership, invite-code joins (including idempotent
-re-joins), posting messages as a non-member (rejected), channel creation
-by member vs. admin/owner, message deletion by member vs. owner
+re-joins), posting messages as a non-member (rejected), empty/over-length
+message content (rejected), posting to a nonexistent channel, channel
+creation by member vs. admin/owner, message deletion by member vs. owner
 (rejected/allowed), chronological message ordering, channel-to-server
-scoping, and duplicate usernames.
+scoping, and duplicate usernames. A separate `tests/test_app.py` adds one
+more test against Flask's test client for the `/healthz` endpoint.
 
 CI (`.github/workflows/tests.yml`) runs the same suite on Python 3.11,
 3.12, and 3.13 on every push/PR. It only exercises `core.py` — the live
@@ -128,5 +130,13 @@ core.py                 # pure logic: models, membership, roles, messages
 app.py                   # Flask routes + Socket.IO events (glue only)
 templates/index.html     # single-page vanilla-JS frontend
 tests/test_core.py       # unit tests for core.py
+tests/test_app.py        # Flask test-client tests for app.py's HTTP routes
 .github/workflows/tests.yml
 ```
+
+## Health check
+
+`GET /healthz` returns `{"status": "ok"}` (200) if the process is up and
+its SQLite connection is working, or `{"status": "error", ...}` (503)
+otherwise — useful for a process manager or uptime check, separate from
+just "Flask is responding."

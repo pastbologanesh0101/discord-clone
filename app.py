@@ -65,6 +65,19 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/healthz")
+def healthz():
+    """Liveness/readiness check: confirms the process is up and the SQLite
+    connection actually works (not just that Flask is responding), so a
+    process manager or uptime check can tell "app is running" apart from
+    "app is running but the DB connection is broken"."""
+    try:
+        get_db().execute("SELECT 1")
+    except Exception as exc:  # pragma: no cover - defensive, DB-failure path
+        return jsonify({"status": "error", "error": str(exc)}), 503
+    return jsonify({"status": "ok"})
+
+
 # ---------------------------------------------------------------------------
 # REST API
 # ---------------------------------------------------------------------------
