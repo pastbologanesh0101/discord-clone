@@ -182,6 +182,27 @@ class CoreTestCase(unittest.TestCase):
         with self.assertRaises(core.NotMemberError):
             core.create_channel(self.conn, server["server_id"], mallory, "hack-channel")
 
+    def test_post_message_with_empty_content_raises_value_error(self):
+        alice = self.make_user("alice")
+        server = core.create_server(self.conn, "Alice's Place", alice)
+        channel_id = core.create_channel(self.conn, server["server_id"], alice, "general")
+
+        # whitespace-only content should be rejected the same way as "",
+        # since post_message() strips before checking.
+        with self.assertRaises(ValueError):
+            core.post_message(self.conn, channel_id, alice, "   ")
+
+        # and the message must not have been persisted
+        history = core.get_channel_messages(self.conn, channel_id)
+        self.assertEqual(history, [])
+
+    def test_post_message_to_nonexistent_channel_raises_not_found(self):
+        alice = self.make_user("alice")
+        core.create_server(self.conn, "Alice's Place", alice)
+
+        with self.assertRaises(core.NotFoundError):
+            core.post_message(self.conn, 9999, alice, "hello?")
+
 
 if __name__ == "__main__":
     unittest.main()
