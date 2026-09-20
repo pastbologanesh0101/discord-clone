@@ -203,6 +203,20 @@ class CoreTestCase(unittest.TestCase):
         with self.assertRaises(core.NotFoundError):
             core.post_message(self.conn, 9999, alice, "hello?")
 
+    def test_post_message_over_max_length_rejected(self):
+        alice = self.make_user("alice")
+        server = core.create_server(self.conn, "Alice's Place", alice)
+        channel_id = core.create_channel(self.conn, server["server_id"], alice, "general")
+
+        too_long = "x" * (core.MAX_MESSAGE_LENGTH + 1)
+        with self.assertRaises(ValueError):
+            core.post_message(self.conn, channel_id, alice, too_long)
+
+        # a message right at the limit is fine
+        at_limit = "x" * core.MAX_MESSAGE_LENGTH
+        msg = core.post_message(self.conn, channel_id, alice, at_limit)
+        self.assertEqual(len(msg["content"]), core.MAX_MESSAGE_LENGTH)
+
 
 if __name__ == "__main__":
     unittest.main()

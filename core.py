@@ -24,6 +24,9 @@ Design notes
   creating a duplicate row. This keeps the client logic simple (a client
   can always "join" the last server it saw an invite for without first
   checking membership). See test_join_server_idempotent.
+* Message content is capped at MAX_MESSAGE_LENGTH characters (rejected
+  with ValueError past that, same as empty content) so a scripted API
+  caller can't insert unbounded rows via post_message().
 """
 
 from __future__ import annotations
@@ -37,6 +40,11 @@ ROLE_OWNER = "owner"
 ROLE_ADMIN = "admin"
 ROLE_MEMBER = "member"
 MANAGE_ROLES = (ROLE_OWNER, ROLE_ADMIN)
+
+# Matches Discord's own message length cap. Without this, a single
+# pasted wall of text (or a scripted API caller) could grow the messages
+# table unboundedly and blow past what the frontend can reasonably render.
+MAX_MESSAGE_LENGTH = 4000
 
 
 class CoreError(Exception):
@@ -306,6 +314,11 @@ def post_message(
     content = content.strip()
     if not content:
         raise ValueError("message content must not be empty")
+    if len(content) > MAX_MESSAGE_LENGTH:
+        raise ValueError(
+            f"message content must not exceed {MAX_MESSAGE_LENGTH} characters "
+            f"(got {len(content)})"
+        )
 
     ts = created_at or _now()
     cur = conn.execute(
