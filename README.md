@@ -83,6 +83,44 @@ CI (`.github/workflows/tests.yml`) runs the same suite on Python 3.11 and
 3.12 on every push/PR. It only exercises `core.py` — the live Socket.IO
 server is not started in CI.
 
+## Troubleshooting / FAQ
+
+**"Join" says `no server with invite code '...'` even though I copied it
+correctly.** Invite codes are matched with an exact string comparison
+against the `servers.invite_code` column, so trailing whitespace (easy to
+pick up when copying from a chat message) or a code from a previous run
+against a different `discord_clone.db` file will both fail to match.
+Re-copy the code from the sidebar of the tab that owns the server, and
+make sure both tabs are pointed at the same server process/DB file.
+
+**Messages don't show up in the other tab, but reloading fetches them.**
+That means the REST fetch of history (`GET /api/channels/<id>/messages`)
+works but the Socket.IO broadcast doesn't — almost always because that
+browser tab never emitted `join_channel` for the channel it's viewing
+(so it isn't in that channel's Socket.IO room), or the websocket
+connection dropped silently. Check the browser console for Socket.IO
+connection errors, and confirm both tabs called `join_channel` with the
+same `channel_id` after selecting the channel.
+
+**`sqlite3.OperationalError: database is locked` under load.** This app
+uses one shared SQLite connection per process (see `get_db()` in
+`app.py`) with the Socket.IO server in `threading` mode, which is fine
+for a couple of browser tabs but not for real concurrent write load —
+SQLite serializes writers. If you're stress-testing this, that's
+expected; it's not meant to be a production chat backend.
+
+**I get a 403 with `InsufficientRoleError` when creating a channel or
+deleting a message, but I'm sure I'm in the server.** Only `owner` and
+`admin` members may create channels or delete messages — plain `member`s
+can post but not manage the server. This is enforced in `core.py`
+regardless of what the UI shows, so a raw API/socket call as a plain
+member is rejected the same way. Check your role with
+`GET /api/servers?user_id=<id>` (it's in the `role` field for each
+server).
+
+**Port 5000 is already in use.** Set `PORT=5001 python app.py` (or any
+free port) — see the environment variables listed in `CONTRIBUTING.md`.
+
 ## Project layout
 
 ```
