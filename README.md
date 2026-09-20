@@ -4,6 +4,16 @@ A small, self-contained Discord-style chat platform: **servers (guilds)**
 containing **channels**, with **membership and roles** — not just flat
 real-time chat. Built with Flask, Flask-SocketIO, and SQLite.
 
+## Table of contents
+
+- [Data model](#data-model)
+- [How to run](#how-to-run)
+- [How to try it with two browser tabs](#how-to-try-it-with-two-browser-tabs)
+- [Running the tests](#running-the-tests)
+- [Troubleshooting / FAQ](#troubleshooting--faq)
+- [Project layout](#project-layout)
+- [Health check](#health-check)
+
 ## Data model
 
 | Table                | Columns |
