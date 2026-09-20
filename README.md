@@ -79,9 +79,9 @@ by member vs. admin/owner, message deletion by member vs. owner
 (rejected/allowed), chronological message ordering, channel-to-server
 scoping, and duplicate usernames.
 
-CI (`.github/workflows/tests.yml`) runs the same suite on Python 3.11 and
-3.12 on every push/PR. It only exercises `core.py` — the live Socket.IO
-server is not started in CI.
+CI (`.github/workflows/tests.yml`) runs the same suite on Python 3.11,
+3.12, and 3.13 on every push/PR. It only exercises `core.py` — the live
+Socket.IO server is not started in CI.
 
 ## Troubleshooting / FAQ
 
