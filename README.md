@@ -36,6 +36,23 @@ Flask/Socket.IO imports, so it's fully unit-testable without a live
 websocket connection. `app.py` is just the HTTP/Socket.IO glue that calls
 into `core.py` and translates exceptions into error responses.
 
+### How messages actually move
+
+There are two separate paths, and the frontend uses both: **loading**
+history is a plain REST call (`GET /api/channels/<id>/messages`), which
+reads everything currently in the `messages` table for that channel in
+chronological order — this is what runs on page load/reload, and what a
+non-browser API client would use too. **Sending/receiving live** goes
+over Socket.IO instead: a client `join_channel`s (joining the Socket.IO
+room `channel_{id}`, after `app.py` checks server membership) and then
+`send_message` both persists the message via `core.post_message()` *and*
+`socketio.emit`s it to every other socket in that room — so every open
+tab on that channel gets it instantly, without polling. The two paths
+share nothing but the same SQLite table: REST never touches a socket
+room, and the socket handlers never bypass `core.py`'s validation/role
+checks, so "post via curl" and "post by typing in the UI" are enforced
+identically.
+
 ### Design choice: joining a server twice
 
 `core.join_server()` is **idempotent** — if you're already a member, it
